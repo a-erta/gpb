@@ -354,7 +354,7 @@ const kickers=["This is not an incremental step. This is a platform shift.","Weâ
 const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
 
 // ---- API (Kimi via GPB API); everything falls back to local templates ----
-const API="__API__";
+const API="https://gpb-api.onrender.com";
 let apiOk=!API.startsWith("__");
 async function api(path,body,ms){
   if(!apiOk) throw new Error("off");
