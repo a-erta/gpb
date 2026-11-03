@@ -152,6 +152,45 @@ footer .big{font-size:clamp(28px,5vw,44px);color:var(--ink);margin-bottom:16px}
   .gen{padding:22px}
 }
 @media (prefers-reduced-motion:reduce){.ticker-track{animation:none}}
+
+/* compact generator console */
+.hero{padding:24px 0 26px}
+.hero .badge{margin-bottom:16px}
+.proj .btn{white-space:nowrap}
+.chips.ex .chip{white-space:nowrap}
+h1{font-size:clamp(56px,10vw,120px)}
+.hero p{margin-top:14px}
+.gen-sec{padding:0 0 70px}
+.gen-sec .fine{text-align:center}
+.gen{margin-top:0;padding:22px}
+.proj{margin-top:0}
+.out{margin-top:18px;background:var(--bg2);border:1px solid var(--line);border-radius:16px;padding:18px 22px 20px}
+.out-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.out-actions{display:flex;gap:8px;text-transform:none;letter-spacing:0}
+.mini{font:inherit;font-size:13px;font-weight:600;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:99px;padding:6px 12px;cursor:pointer}
+.mini:hover{border-color:var(--gold)}
+.mini b{color:var(--gold);margin-left:4px}
+.mini:disabled{opacity:.5;cursor:wait}
+#quote{font-size:clamp(22px,2.6vw,30px);line-height:1.2;margin:12px 0 4px;min-height:2.4em}
+#quote.placeholder{color:var(--mute)}
+#kicker{font-size:15px;min-height:1.5em}
+#reality{margin-top:12px;font-size:14px}
+.stats{margin:16px 0 0;gap:10px}
+.stat{padding:10px 12px;border-radius:12px;background:var(--card)}
+.stat small{font-size:11px}
+.stat b{font-size:18px}
+#s-date{font-size:14px}
+.transcript{max-height:340px}
+#toast{opacity:0;transition:transform .25s,opacity .25s}
+#toast.show{opacity:1}
+@media (max-width:820px){
+  .proj .btn{flex:1;padding:12px 14px}
+  .out{padding:16px}
+  .chips.ex{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-left:-4px;padding:2px 4px}
+  .chips.ex::-webkit-scrollbar{display:none}
+  .try{display:none}
+  .hero{padding:16px 0 20px}
+}
 </style>
 </head>
 <body>
@@ -161,35 +200,22 @@ footer .big{font-size:clamp(28px,5vw,44px);color:var(--ink);margin-bottom:16px}
 <div class="wrap">
   <nav>
     <div class="logo"><b>GPB</b> Labs</div>
-    <a class="pill" href="#generator">Try it — no NDA required</a>
+    <a class="pill" href="#call">Earnings call simulator ↓</a>
   </nav>
 
   <header class="hero">
     <div class="badge">Now in Perpetual Preview</div>
     <h1>GPB</h1>
     <h2>Generative <span class="serif">Premium</span> Bullshitter</h2>
-    <p>The first foundation model trained exclusively on promises. Zero hallucinations — because nothing it says was ever meant to be true.</p>
-    <div class="ctas">
-      <a class="btn primary" href="#generator">Generate an announcement</a>
-      <a class="btn" href="#models">Book a demo (available Q7)</a>
-    </div>
-    <div class="fine">Forward-looking statements only. Backward-looking statements are a legacy feature.</div>
+    <p>Tell it what actually happened. It tells the market what it wants to hear.</p>
   </header>
 
-  <section id="generator">
-    <div class="eyebrow">Live inference</div>
-    <h3>Your next earnings call,<br>written in 40 milliseconds.</h3>
-    <p class="lead">GPB optimizes a single objective: the share price at T+1. Every verifiable claim is penalized during training.</p>
-
+  <section id="generator" class="gen-sec">
     <div class="gen">
-      <div class="gen-top">
-        <span class="live"><i></i> GPB-3 Ultra · founder mode · <span id="engine">engine: warming up</span></span>
-        <span class="mono">escalation level <b id="lvl">0</b></span>
-      </div>
-      <div class="step"><span class="num">1</span> What actually happened</div>
       <div class="proj">
-        <input class="field" id="proj-in" maxlength="200" placeholder="Something small and true, e.g. “we fixed a typo on the website”">
+        <input class="field" id="proj-in" maxlength="200" placeholder="What actually happened? e.g. “we fixed a typo on the website”">
         <button class="btn gold" id="b-proj">Hype it 🎈</button>
+        <button class="btn" id="b-gen">Surprise me 🎲</button>
       </div>
       <div class="chips ex" id="ex-chips">
         <span class="try">Try:</span>
@@ -198,22 +224,23 @@ footer .big{font-size:clamp(28px,5vw,44px);color:var(--ink);margin-bottom:16px}
         <button class="chip">The intern wrote a Python script</button>
         <button class="chip">We bought a new coffee machine</button>
       </div>
-      <div class="step out"><span class="num">2</span> What GPB announces</div>
-      <div id="reality"></div>
-      <div id="quote">Type something boring above, or hit Surprise me.</div>
-      <div id="kicker">&nbsp;</div>
-      <div class="stats">
-        <div class="stat"><small>Projected stock impact</small><b class="up" id="s-impact">—</b></div>
-        <div class="stat"><small>Bullshit per share</small><b id="s-bps">—</b></div>
-        <div class="stat"><small>Verifiability</small><b class="down" id="s-ver">—</b></div>
-        <div class="stat"><small>Delivery date</small><b id="s-date" style="font-size:15px">—</b></div>
-      </div>
-      <div class="row">
-        <button class="btn" id="b-gen">Surprise me 🎲</button>
-        <button class="btn" id="b-esc">Escalate 🚀</button>
-        <button class="btn" id="b-copy">Copy for LinkedIn</button>
+      <div class="out">
+        <div class="out-head">
+          <span class="live"><i></i> Press release · for immediate pump</span>
+          <span class="out-actions"><button class="mini" id="b-esc">Escalate 🚀<b id="lvl"></b></button><button class="mini" id="b-copy">Copy for LinkedIn</button></span>
+        </div>
+        <div id="reality"></div>
+        <div id="quote" class="placeholder">Your announcement will appear here.</div>
+        <div id="kicker"></div>
+        <div class="stats">
+          <div class="stat"><small>Stock impact</small><b class="up" id="s-impact">—</b></div>
+          <div class="stat"><small>Bullshit per share</small><b id="s-bps">—</b></div>
+          <div class="stat"><small>Verifiability</small><b class="down" id="s-ver">—</b></div>
+          <div class="stat"><small>Delivery</small><b id="s-date">—</b></div>
+        </div>
       </div>
     </div>
+    <div class="fine">Forward-looking statements only. Backward-looking statements are a legacy feature.</div>
   </section>
 
   <section id="call">
@@ -384,8 +411,7 @@ async function api(path,body,ms){
   }finally{clearTimeout(t)}
 }
 const el=id=>document.getElementById(id);
-const setEngine=live=>el("engine").textContent=live?"engine: Kimi":"engine: cached bullshit";
-setEngine(false);
+const setEngine=()=>{};
 if(apiOk) fetch(API+"/healthz").then(r=>r.json()).then(j=>{if(!j.kimi)apiOk=false}).catch(()=>{});
 
 // ---- "thinking" indicator: spinner + rotating status lines ----
@@ -409,8 +435,8 @@ function localAnnounce(){
 }
 async function render(){
   if(busy) return; busy=true;
-  const btns=["b-gen","b-esc","b-proj"].map(el); btns.forEach(b=>b.disabled=true);
-  el("engine").textContent="engine: thinking…"; el("kicker").innerHTML="&nbsp;";
+  const btns=["b-gen","b-esc","b-proj","b-copy"].map(el); btns.forEach(b=>b.disabled=true);
+  el("quote").classList.remove("placeholder"); el("kicker").textContent="";
   const stop=thinking(el("quote"),genMsgs);
   let r=null, live=false;
   try{ r=await api("/api/announce",{project,level:lvl},9000); live=!!(r&&r.quote); }catch(e){}
@@ -420,7 +446,7 @@ async function render(){
   el("kicker").textContent=r.kicker||"";
   cur=r.quote+(r.kicker?" "+r.kicker:"");
   const tl=timelines[Math.min(lvl,timelines.length-1)];
-  el("lvl").textContent=lvl;
+  el("lvl").textContent=lvl?" ×"+lvl:"";
   el("s-impact").textContent="+"+(rnd(2,9)+lvl*4.2).toFixed(1)+"%";
   el("s-bps").textContent=(rnd(3,8)*Math.pow(1.9,lvl)).toFixed(2);
   el("s-ver").textContent=Math.max(0,(4-lvl*1.5)).toFixed(1)+"%";

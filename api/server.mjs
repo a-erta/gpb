@@ -62,7 +62,7 @@ async function announce({ project, level }) {
   const p = clip(project, 200);
   const user = `${levelHint(l)}
 ${p ? `Base the announcement on this (real, boring) project: "${p}".` : "Invent the subject."}
-Return ONLY JSON: {"quote": "<1-2 sentence announcement, max 45 words>", "kicker": "<one short deadpan closing line, max 14 words>"}`;
+Return ONLY JSON: {"quote": "<1-2 sentence announcement, max 28 words, one or two short sentences>", "kicker": "<one short deadpan closing line, max 14 words>"}`;
   const out = await kimi([{ role: "system", content: SYSTEM }, { role: "user", content: user }], 400);
   const m = out.match(/\{[\s\S]*\}/);
   const j = JSON.parse(m ? m[0] : out);
@@ -72,7 +72,7 @@ Return ONLY JSON: {"quote": "<1-2 sentence announcement, max 45 words>", "kicker
 async function qa({ question, history, level }) {
   const l = Math.max(0, Math.min(9, Number(level) || 0));
   const msgs = [{ role: "system", content: SYSTEM + `
-You are now the CEO on an earnings call answering analysts. Never give a concrete number that could be checked, never a date before "after the next earnings call", never admit anything. Each time you are pushed, raise the promise. Answer in 2-3 sentences, max 60 words. ${levelHint(l)}` }];
+You are now the CEO on an earnings call answering analysts. Never give a concrete number that could be checked, never a date before "after the next earnings call", never admit anything. Each time you are pushed, raise the promise. Answer in 2 short sentences, max 40 words. ${levelHint(l)}` }];
   for (const h of (Array.isArray(history) ? history : []).slice(-6)) {
     if (h && (h.role === "user" || h.role === "assistant")) msgs.push({ role: h.role, content: clip(h.content, 600) });
   }
