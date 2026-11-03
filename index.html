@@ -123,7 +123,9 @@ details p{color:var(--mute);margin-top:10px;max-width:760px}
 #quote{margin-top:10px}
 .field{flex:1;min-width:220px;font:inherit;font-size:15px;background:var(--bg2);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:13px 14px;outline:none}
 .field:focus{border-color:var(--gold)}
-.thinking{opacity:.45;transition:opacity .2s}
+.loading{color:var(--mute)!important;font-family:"JetBrains Mono",monospace!important;font-size:17px!important;line-height:1.5!important;display:flex;align-items:center;gap:10px}
+.spin{width:16px;height:16px;flex:none;border:2px solid var(--line);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 
 /* earnings call */
 .call{margin-top:34px;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:26px}
@@ -386,6 +388,17 @@ const setEngine=live=>el("engine").textContent=live?"engine: Kimi":"engine: cach
 setEngine(false);
 if(apiOk) fetch(API+"/healthz").then(r=>r.json()).then(j=>{if(!j.kimi)apiOk=false}).catch(()=>{});
 
+// ---- "thinking" indicator: spinner + rotating status lines ----
+const genMsgs=["Removing verifiable claims…","Inflating the TAM…","Shortening the timeline…","Rounding up to 110%…","Adding unlimited tokens…","Consulting the board…"];
+const qaMsgs=["Avoiding the question…","Checking with legal…","Pivoting to the vision…","Rephrasing the guidance…"];
+function thinking(node,msgs){
+  let i=Math.floor(Math.random()*msgs.length);
+  node.classList.add("loading");
+  const set=()=>{node.innerHTML='<span class="spin"></span><span></span>';node.lastChild.textContent=msgs[i++%msgs.length]};
+  set(); const t=setInterval(set,900);
+  return ()=>{clearInterval(t);node.classList.remove("loading");node.textContent=""};
+}
+
 // ---- generator ----
 let lvl=0, cur="", project="", busy=false;
 function localAnnounce(){
@@ -397,11 +410,12 @@ function localAnnounce(){
 async function render(){
   if(busy) return; busy=true;
   const btns=["b-gen","b-esc","b-proj"].map(el); btns.forEach(b=>b.disabled=true);
-  el("quote").classList.add("thinking");
+  el("engine").textContent="engine: thinking…"; el("kicker").innerHTML="&nbsp;";
+  const stop=thinking(el("quote"),genMsgs);
   let r=null, live=false;
   try{ r=await api("/api/announce",{project,level:lvl},9000); live=!!(r&&r.quote); }catch(e){}
   if(!live) r=localAnnounce();
-  setEngine(live);
+  stop(); setEngine(live);
   el("quote").textContent="“"+r.quote+"”";
   el("kicker").textContent=r.kicker||"";
   cur=r.quote+(r.kicker?" "+r.kicker:"");
@@ -411,7 +425,6 @@ async function render(){
   el("s-bps").textContent=(rnd(3,8)*Math.pow(1.9,lvl)).toFixed(2);
   el("s-ver").textContent=Math.max(0,(4-lvl*1.5)).toFixed(1)+"%";
   el("s-date").textContent=tl[1];
-  el("quote").classList.remove("thinking");
   btns.forEach(b=>b.disabled=false); busy=false;
 }
 const setReality=t=>el("reality").textContent=t?"Reality: "+t:"";
@@ -448,12 +461,12 @@ async function ask(q){
   q=q.trim(); if(!q||qbusy) return; qbusy=true;
   const ctrls=[...document.querySelectorAll("#chips .chip"),el("b-ask"),el("b-follow")]; ctrls.forEach(b=>b.disabled=true);
   addLine("Analyst",q);
-  const slot=addLine("CEO","…",true); slot.classList.add("thinking");
+  const slot=addLine("CEO","",true); const stop=thinking(slot,qaMsgs);
   let a="";
   try{ const r=await api("/api/qa",{question:q,history:hist,level:qlvl},12000); a=(r&&r.answer)||""; }catch(e){}
   setEngine(!!a);
   if(!a) a=pick(localAnswers)+(qlvl?` And to be clear, we are now targeting ${100+qlvl*7}%.`:"");
-  slot.textContent=a; slot.classList.remove("thinking");
+  stop(); slot.textContent=a;
   hist.push({role:"user",content:q},{role:"assistant",content:a}); hist=hist.slice(-6);
   el("qlvl").textContent=qlvl;
   ctrls.forEach(b=>b.disabled=false); qbusy=false;
