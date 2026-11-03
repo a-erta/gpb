@@ -111,10 +111,16 @@ details[open] summary:after{content:"–"}
 details p{color:var(--mute);margin-top:10px;max-width:760px}
 
 /* project input */
-.proj-toggle{background:none;border:0;color:var(--mute);font:inherit;font-size:14px;cursor:pointer;margin-top:18px;text-decoration:underline;text-underline-offset:3px}
-.proj-toggle:hover{color:var(--ink)}
-.proj{display:none;margin-top:12px;gap:10px;flex-wrap:wrap}
-.proj.open{display:flex}
+.step{display:flex;align-items:center;gap:10px;margin-top:22px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+.step .num{width:22px;height:22px;border-radius:50%;display:inline-grid;place-items:center;background:var(--gold);color:#000;font-weight:800;font-size:12px;letter-spacing:0}
+.step.out{margin-top:30px;padding-top:24px;border-top:1px dashed var(--line)}
+.proj{display:flex;margin-top:12px;gap:10px;flex-wrap:wrap}
+.chips.ex{margin-top:12px;align-items:center}
+.chips.ex .chip{font-size:13px;padding:7px 12px}
+.try{font-size:13px;color:var(--mute);margin-right:2px}
+#reality{margin-top:14px;color:var(--mute);font-size:15px;text-decoration:line-through;text-decoration-color:var(--down);min-height:0}
+#reality:empty{display:none}
+#quote{margin-top:10px}
 .field{flex:1;min-width:220px;font:inherit;font-size:15px;background:var(--bg2);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:13px 14px;outline:none}
 .field:focus{border-color:var(--gold)}
 .thinking{opacity:.45;transition:opacity .2s}
@@ -178,7 +184,21 @@ footer .big{font-size:clamp(28px,5vw,44px);color:var(--ink);margin-bottom:16px}
         <span class="live"><i></i> GPB-3 Ultra · founder mode · <span id="engine">engine: warming up</span></span>
         <span class="mono">escalation level <b id="lvl">0</b></span>
       </div>
-      <div id="quote">Press the button. Move the market.</div>
+      <div class="step"><span class="num">1</span> What actually happened</div>
+      <div class="proj">
+        <input class="field" id="proj-in" maxlength="200" placeholder="Something small and true, e.g. “we fixed a typo on the website”">
+        <button class="btn gold" id="b-proj">Hype it 🎈</button>
+      </div>
+      <div class="chips ex" id="ex-chips">
+        <span class="try">Try:</span>
+        <button class="chip">We fixed a typo on the website</button>
+        <button class="chip">We renamed a Slack channel</button>
+        <button class="chip">The intern wrote a Python script</button>
+        <button class="chip">We bought a new coffee machine</button>
+      </div>
+      <div class="step out"><span class="num">2</span> What GPB announces</div>
+      <div id="reality"></div>
+      <div id="quote">Type something boring above, or hit Surprise me.</div>
       <div id="kicker">&nbsp;</div>
       <div class="stats">
         <div class="stat"><small>Projected stock impact</small><b class="up" id="s-impact">—</b></div>
@@ -187,14 +207,9 @@ footer .big{font-size:clamp(28px,5vw,44px);color:var(--ink);margin-bottom:16px}
         <div class="stat"><small>Delivery date</small><b id="s-date" style="font-size:15px">—</b></div>
       </div>
       <div class="row">
-        <button class="btn gold" id="b-gen">Generate</button>
+        <button class="btn" id="b-gen">Surprise me 🎲</button>
         <button class="btn" id="b-esc">Escalate 🚀</button>
         <button class="btn" id="b-copy">Copy for LinkedIn</button>
-      </div>
-      <button class="proj-toggle" id="proj-toggle">Make it about your project →</button>
-      <div class="proj" id="proj">
-        <input class="field" id="proj-in" maxlength="200" placeholder="e.g. we upgraded the firmware on 40 radios">
-        <button class="btn gold" id="b-proj">Inflate it</button>
       </div>
     </div>
   </section>
@@ -399,12 +414,17 @@ async function render(){
   el("quote").classList.remove("thinking");
   btns.forEach(b=>b.disabled=false); busy=false;
 }
-el("b-gen").onclick=()=>{lvl=0;project="";render()};
+const setReality=t=>el("reality").textContent=t?"Reality: "+t:"";
+el("b-gen").onclick=()=>{lvl=0;project="";el("proj-in").value="";setReality("");render()};
 el("b-esc").onclick=()=>{lvl=Math.min(lvl+1,9);render()};
-el("proj-toggle").onclick=()=>{el("proj").classList.toggle("open");el("proj-in").focus()};
-const inflate=()=>{project=el("proj-in").value.trim();lvl=0;render()};
+const inflate=()=>{
+  const v=el("proj-in").value.trim();
+  if(!v){el("proj-in").focus();el("proj-in").placeholder="Type something boring first ↑";return}
+  project=v;lvl=0;setReality(v);render();
+};
 el("b-proj").onclick=inflate;
 el("proj-in").onkeydown=e=>{if(e.key==="Enter")inflate()};
+document.querySelectorAll("#ex-chips .chip").forEach(c=>c.onclick=()=>{el("proj-in").value=c.textContent;inflate()});
 
 // ---- earnings call ----
 let qlvl=0, hist=[], lastQ="", qbusy=false;

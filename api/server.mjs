@@ -44,11 +44,14 @@ async function kimi(messages, maxTokens) {
       method: "POST",
       signal: ctrl.signal,
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${KEY}` },
-      body: JSON.stringify({ model: MODEL, messages, max_tokens: maxTokens, temperature: 1 })
+      // k2.6 thinks by default (slow, eats max_tokens) and rejects custom temperature
+      body: JSON.stringify({ model: MODEL, messages, max_tokens: maxTokens, thinking: { type: "disabled" } })
     });
-    if (!r.ok) throw new Error(`kimi ${r.status}`);
+    if (!r.ok) throw new Error(`kimi ${r.status} ${(await r.text()).slice(0, 200)}`);
     const j = await r.json();
-    return (j.choices?.[0]?.message?.content || "").trim();
+    const out = (j.choices?.[0]?.message?.content || "").trim();
+    if (!out) throw new Error(`kimi empty (finish ${j.choices?.[0]?.finish_reason})`);
+    return out;
   } finally { clearTimeout(t); }
 }
 
@@ -60,7 +63,7 @@ async function announce({ project, level }) {
   const user = `${levelHint(l)}
 ${p ? `Base the announcement on this (real, boring) project: "${p}".` : "Invent the subject."}
 Return ONLY JSON: {"quote": "<1-2 sentence announcement, max 45 words>", "kicker": "<one short deadpan closing line, max 14 words>"}`;
-  const out = await kimi([{ role: "system", content: SYSTEM }, { role: "user", content: user }], 220);
+  const out = await kimi([{ role: "system", content: SYSTEM }, { role: "user", content: user }], 400);
   const m = out.match(/\{[\s\S]*\}/);
   const j = JSON.parse(m ? m[0] : out);
   return { quote: clip(j.quote, 400), kicker: clip(j.kicker, 160) };
@@ -74,7 +77,7 @@ You are now the CEO on an earnings call answering analysts. Never give a concret
     if (h && (h.role === "user" || h.role === "assistant")) msgs.push({ role: h.role, content: clip(h.content, 600) });
   }
   msgs.push({ role: "user", content: clip(question, 200) || "Can you be more specific?" });
-  return { answer: clip(await kimi(msgs, 200), 600) };
+  return { answer: clip(await kimi(msgs, 350), 600) };
 }
 
 function send(res, code, obj, origin) {
