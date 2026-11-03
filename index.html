@@ -110,6 +110,30 @@ summary:after{content:"+";float:right;color:var(--gold)}
 details[open] summary:after{content:"–"}
 details p{color:var(--mute);margin-top:10px;max-width:760px}
 
+/* project input */
+.proj-toggle{background:none;border:0;color:var(--mute);font:inherit;font-size:14px;cursor:pointer;margin-top:18px;text-decoration:underline;text-underline-offset:3px}
+.proj-toggle:hover{color:var(--ink)}
+.proj{display:none;margin-top:12px;gap:10px;flex-wrap:wrap}
+.proj.open{display:flex}
+.field{flex:1;min-width:220px;font:inherit;font-size:15px;background:var(--bg2);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:13px 14px;outline:none}
+.field:focus{border-color:var(--gold)}
+.thinking{opacity:.45;transition:opacity .2s}
+
+/* earnings call */
+.call{margin-top:34px;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:26px}
+.call-head{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--mute);margin-bottom:18px}
+.transcript{display:grid;gap:14px;max-height:460px;overflow-y:auto;padding-right:4px}
+.line{display:grid;grid-template-columns:96px 1fr;gap:14px;font-size:16px}
+.line .who{font-family:"JetBrains Mono",monospace;font-size:12px;text-transform:uppercase;letter-spacing:.08em;padding-top:3px;color:var(--mute)}
+.line.ceo .who{color:var(--gold)}
+.line.ceo .txt{font-family:"Instrument Serif",serif;font-size:22px;line-height:1.25}
+.empty{color:var(--mute);font-size:15px}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:20px}
+.chip{font:inherit;font-size:14px;background:var(--bg2);color:var(--ink);border:1px solid var(--line);border-radius:99px;padding:9px 14px;cursor:pointer}
+.chip:hover{border-color:var(--gold)}
+.chip:disabled,.btn:disabled{opacity:.5;cursor:wait}
+.ask{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+
 footer{border-top:1px solid var(--line);padding:40px 0 60px;color:var(--mute);font-size:13px;text-align:center}
 footer .big{font-size:clamp(28px,5vw,44px);color:var(--ink);margin-bottom:16px}
 
@@ -151,7 +175,7 @@ footer .big{font-size:clamp(28px,5vw,44px);color:var(--ink);margin-bottom:16px}
 
     <div class="gen">
       <div class="gen-top">
-        <span class="live"><i></i> GPB-3 Ultra · founder mode · temperature ∞</span>
+        <span class="live"><i></i> GPB-3 Ultra · founder mode · <span id="engine">engine: warming up</span></span>
         <span class="mono">escalation level <b id="lvl">0</b></span>
       </div>
       <div id="quote">Press the button. Move the market.</div>
@@ -166,6 +190,34 @@ footer .big{font-size:clamp(28px,5vw,44px);color:var(--ink);margin-bottom:16px}
         <button class="btn gold" id="b-gen">Generate</button>
         <button class="btn" id="b-esc">Escalate 🚀</button>
         <button class="btn" id="b-copy">Copy for LinkedIn</button>
+      </div>
+      <button class="proj-toggle" id="proj-toggle">Make it about your project →</button>
+      <div class="proj" id="proj">
+        <input class="field" id="proj-in" maxlength="200" placeholder="e.g. we upgraded the firmware on 40 radios">
+        <button class="btn gold" id="b-proj">Inflate it</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="call">
+    <div class="eyebrow">Earnings call simulator</div>
+    <h3>Ask the hard questions.<br>Get no answers.</h3>
+    <p class="lead">You’re the analyst. GPB is the CEO. Every follow-up makes the promise bigger.</p>
+    <div class="call">
+      <div class="call-head"><span class="live"><i></i> Q3 earnings call · live</span><span class="mono">conviction <b id="qlvl">0</b></span></div>
+      <div class="transcript" id="transcript"><div class="empty">Operator: The line is now open for questions.</div></div>
+      <div class="chips" id="chips">
+        <button class="chip">What’s the KPI?</button>
+        <button class="chip">When does it actually ship?</button>
+        <button class="chip">What happened to last year’s promise?</button>
+        <button class="chip">How many engineers are on this?</button>
+        <button class="chip">Is any of this in the guidance?</button>
+        <button class="chip">What’s the cost of all those tokens?</button>
+      </div>
+      <div class="ask">
+        <input class="field" id="q-in" maxlength="200" placeholder="Or ask your own question">
+        <button class="btn" id="b-ask">Ask</button>
+        <button class="btn gold" id="b-follow" disabled>Follow up 🔁</button>
       </div>
     </div>
   </section>
@@ -301,28 +353,99 @@ const templates=[
 const kickers=["This is not an incremental step. This is a platform shift.","We’re operating in founder mode.","Details will follow at the next keynote.","Analysts were not briefed, because there is nothing to brief.","The remaining percentage is a rounding error and a mindset.","We’ve never been more excited about something we haven’t started.","Effort estimates are a legacy concept."];
 const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
 
-let lvl=0, cur="";
+// ---- API (Kimi via GPB API); everything falls back to local templates ----
+const API="__API__";
+let apiOk=!API.startsWith("__");
+async function api(path,body,ms){
+  if(!apiOk) throw new Error("off");
+  const c=new AbortController(), t=setTimeout(()=>c.abort(),ms);
+  try{
+    const r=await fetch(API+path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body),signal:c.signal});
+    if(r.status===503) apiOk=false;
+    if(!r.ok) throw new Error(r.status);
+    return await r.json();
+  }finally{clearTimeout(t)}
+}
 const el=id=>document.getElementById(id);
+const setEngine=live=>el("engine").textContent=live?"engine: Kimi":"engine: cached bullshit";
+setEngine(false);
+if(apiOk) fetch(API+"/healthz").then(r=>r.json()).then(j=>{if(!j.kimi)apiOk=false}).catch(()=>{});
 
-function render(){
+// ---- generator ----
+let lvl=0, cur="", project="", busy=false;
+function localAnnounce(){
   const i=Math.min(lvl,timelines.length-1);
   const p=Math.round(Math.min(97+lvl*3+rnd(0,2),150));
-  const tl=timelines[i], tm=teams[Math.min(lvl,teams.length-1)][0];
-  cur=pick(templates)(pick(verbs),pick(objects),p,tl[0],tm);
-  const k=pick(kickers);
-  el("quote").textContent="“"+cur+"”";
-  el("kicker").textContent=k;
-  cur+=" "+k;
+  const obj=project?`the “${project}” initiative`:pick(objects);
+  return {quote:pick(templates)(pick(verbs),obj,p,timelines[i][0],teams[Math.min(lvl,teams.length-1)][0]),kicker:pick(kickers)};
+}
+async function render(){
+  if(busy) return; busy=true;
+  const btns=["b-gen","b-esc","b-proj"].map(el); btns.forEach(b=>b.disabled=true);
+  el("quote").classList.add("thinking");
+  let r=null, live=false;
+  try{ r=await api("/api/announce",{project,level:lvl},9000); live=!!(r&&r.quote); }catch(e){}
+  if(!live) r=localAnnounce();
+  setEngine(live);
+  el("quote").textContent="“"+r.quote+"”";
+  el("kicker").textContent=r.kicker||"";
+  cur=r.quote+(r.kicker?" "+r.kicker:"");
+  const tl=timelines[Math.min(lvl,timelines.length-1)];
   el("lvl").textContent=lvl;
   el("s-impact").textContent="+"+(rnd(2,9)+lvl*4.2).toFixed(1)+"%";
   el("s-bps").textContent=(rnd(3,8)*Math.pow(1.9,lvl)).toFixed(2);
   el("s-ver").textContent=Math.max(0,(4-lvl*1.5)).toFixed(1)+"%";
   el("s-date").textContent=tl[1];
+  el("quote").classList.remove("thinking");
+  btns.forEach(b=>b.disabled=false); busy=false;
 }
-el("b-gen").onclick=()=>{lvl=0;render()};
+el("b-gen").onclick=()=>{lvl=0;project="";render()};
 el("b-esc").onclick=()=>{lvl=Math.min(lvl+1,9);render()};
+el("proj-toggle").onclick=()=>{el("proj").classList.toggle("open");el("proj-in").focus()};
+const inflate=()=>{project=el("proj-in").value.trim();lvl=0;render()};
+el("b-proj").onclick=inflate;
+el("proj-in").onkeydown=e=>{if(e.key==="Enter")inflate()};
+
+// ---- earnings call ----
+let qlvl=0, hist=[], lastQ="", qbusy=false;
+const localAnswers=[
+  "Great question. What I can share is that momentum is unprecedented, and we’ll give specifics at the right time, which is after the next earnings call.",
+  "We don’t think in KPIs anymore. We think in platform shifts, and this one is the biggest in our history.",
+  "Last year’s promise has been superseded by this year’s promise, which is meaningfully bigger. That’s what progress looks like.",
+  "The team is two people and unlimited tokens. Headcount is a legacy metric.",
+  "It is directionally embedded in the guidance, in a way that will become clear in hindsight.",
+  "Tokens are not a cost. They are an investment in conviction."
+];
+const followUps=["Sorry, that didn’t answer my question.","Can you give us an actual number?","So is that a yes or a no?","Let me push back on that a little.","Could you be more specific?"];
+function addLine(who,txt,ceo){
+  const t=el("transcript"); t.querySelector(".empty")?.remove();
+  const d=document.createElement("div"); d.className="line"+(ceo?" ceo":"");
+  d.innerHTML='<span class="who"></span><span class="txt"></span>';
+  d.children[0].textContent=who; d.children[1].textContent=txt;
+  t.appendChild(d); t.scrollTop=t.scrollHeight; return d.children[1];
+}
+async function ask(q){
+  q=q.trim(); if(!q||qbusy) return; qbusy=true;
+  const ctrls=[...document.querySelectorAll("#chips .chip"),el("b-ask"),el("b-follow")]; ctrls.forEach(b=>b.disabled=true);
+  addLine("Analyst",q);
+  const slot=addLine("CEO","…",true); slot.classList.add("thinking");
+  let a="";
+  try{ const r=await api("/api/qa",{question:q,history:hist,level:qlvl},12000); a=(r&&r.answer)||""; }catch(e){}
+  setEngine(!!a);
+  if(!a) a=pick(localAnswers)+(qlvl?` And to be clear, we are now targeting ${100+qlvl*7}%.`:"");
+  slot.textContent=a; slot.classList.remove("thinking");
+  hist.push({role:"user",content:q},{role:"assistant",content:a}); hist=hist.slice(-6);
+  el("qlvl").textContent=qlvl;
+  ctrls.forEach(b=>b.disabled=false); qbusy=false;
+}
+document.querySelectorAll("#chips .chip").forEach(c=>c.onclick=()=>{lastQ=c.textContent;ask(lastQ)});
+const askOwn=()=>{lastQ=el("q-in").value;el("q-in").value="";ask(lastQ)};
+el("b-ask").onclick=askOwn;
+el("q-in").onkeydown=e=>{if(e.key==="Enter")askOwn()};
+el("b-follow").onclick=()=>{qlvl=Math.min(qlvl+1,9);ask(pick(followUps))};
+
 el("b-copy").onclick=async()=>{
-  if(!cur) render();
+  if(!cur) await render();
   const txt=`Humbled to announce: ${cur}\n\n#AI #FounderMode #PlatformShift #Humbled`;
   try{await navigator.clipboard.writeText(txt)}catch(e){}
   const t=el("toast");t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1800);
