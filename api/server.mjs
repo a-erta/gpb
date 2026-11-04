@@ -37,11 +37,14 @@ function limited(ip) {
   return arr.length > PER_IP || dayCount >= DAILY_CAP;
 }
 
-// Render's proxy appends the real client IP to X-Forwarded-For, so the LAST entry is trustworthy;
-// earlier entries are whatever the client sent and must not be used for rate limiting.
+// On Render, X-Forwarded-For arrives as "<client-supplied…>, <real client>, <Cloudflare edge>":
+// Cloudflare appends the connecting IP, then Render appends the edge IP. Only the second-to-last
+// entry is trustworthy; anything earlier is whatever the client sent.
+// Override with TRUSTED_PROXY_HOPS if the hosting setup changes (1 = last entry is the client).
+const HOPS = Number(process.env.TRUSTED_PROXY_HOPS || 2);
 function clientIp(req) {
   const xff = String(req.headers["x-forwarded-for"] || "").split(",").map(s => s.trim()).filter(Boolean);
-  return xff[xff.length - 1] || req.socket.remoteAddress || "unknown";
+  return xff[xff.length - HOPS] || xff[xff.length - 1] || req.socket.remoteAddress || "unknown";
 }
 
 const clip = (s, n) => String(s || "").replace(/\s+/g, " ").trim().slice(0, n);
@@ -118,7 +121,6 @@ http.createServer(async (req, res) => {
   if (!HAS_KEY) return send(res, 503, { error: "no key" }, okOrigin);
 
   const ip = clientIp(req);
-  console.log("xff-debug", JSON.stringify(req.headers["x-forwarded-for"] || ""), "->", ip); // TEMP: verify header format, remove after check
   if (limited(ip)) return send(res, 429, { error: "rate limited" }, okOrigin);
 
   let body = "";

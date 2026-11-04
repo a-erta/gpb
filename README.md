@@ -46,6 +46,7 @@ Without a key the page still works, using the built-in templates.
 | `ALLOWED_ORIGIN` | — | Comma-separated origins allowed to call the API |
 | `RATE_PER_IP` | `20` | Requests per IP per 10 minutes |
 | `DAILY_CAP` | `2000` | Total model calls per day |
+| `TRUSTED_PROXY_HOPS` | `2` | Which `X-Forwarded-For` entry (from the end) is the real client; `2` fits Render behind Cloudflare |
 
 ## Deploy
 
