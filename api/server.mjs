@@ -27,10 +27,21 @@ function limited(ip) {
   const arr = (hits.get(ip) || []).filter(t => now - t < WINDOW_MS);
   arr.push(now);
   hits.set(ip, arr);
-  if (hits.size > 5000) hits.clear();
+  if (hits.size > 5000) {
+    // evict expired entries first; only wipe everything as a last resort
+    for (const [k, v] of hits) if (now - v[v.length - 1] >= WINDOW_MS) hits.delete(k);
+    if (hits.size > 5000) hits.clear();
+  }
   const today = new Date().toISOString().slice(0, 10);
   if (today !== day) { day = today; dayCount = 0; }
   return arr.length > PER_IP || dayCount >= DAILY_CAP;
+}
+
+// Render's proxy appends the real client IP to X-Forwarded-For, so the LAST entry is trustworthy;
+// earlier entries are whatever the client sent and must not be used for rate limiting.
+function clientIp(req) {
+  const xff = String(req.headers["x-forwarded-for"] || "").split(",").map(s => s.trim()).filter(Boolean);
+  return xff[xff.length - 1] || req.socket.remoteAddress || "unknown";
 }
 
 const clip = (s, n) => String(s || "").replace(/\s+/g, " ").trim().slice(0, n);
@@ -102,10 +113,12 @@ http.createServer(async (req, res) => {
 
   const route = req.method === "POST" && { "/api/announce": announce, "/api/qa": qa }[req.url];
   if (!route) return send(res, 404, { error: "not found" }, okOrigin);
-  if (origin && !okOrigin) return send(res, 403, { error: "origin" });
+  // browsers always send Origin on these cross-origin POSTs; reject anything else when an allowlist is set
+  if (ORIGINS.length ? !okOrigin : (origin && !okOrigin)) return send(res, 403, { error: "origin" });
   if (!HAS_KEY) return send(res, 503, { error: "no key" }, okOrigin);
 
-  const ip = String(req.headers["x-forwarded-for"] || req.socket.remoteAddress || "").split(",")[0].trim();
+  const ip = clientIp(req);
+  console.log("xff-debug", JSON.stringify(req.headers["x-forwarded-for"] || ""), "->", ip); // TEMP: verify header format, remove after check
   if (limited(ip)) return send(res, 429, { error: "rate limited" }, okOrigin);
 
   let body = "";
