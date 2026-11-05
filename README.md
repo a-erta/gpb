@@ -2,7 +2,7 @@
 
 > The first foundation model trained exclusively on promises.
 
-**Live:** https://gpb-9ho2.onrender.com
+**Live:** https://gpb.news
 
 GPB is a parody of AI-era corporate hype. You tell it something small and true — *"we fixed a typo on the website"* — and it tells the market what it wants to hear: 99.7% of everything, rewritten in four weeks by a two-person team with unlimited tokens. Platform shift included.
 
@@ -51,6 +51,10 @@ Without a key the page still works, using the built-in templates.
 ## Deploy
 
 On Render: a **static site** publishing the repo root (no build), plus a **web service** running `node api/server.mjs` with the variables above.
+
+## Privacy
+
+The page uses Google Analytics 4 with Consent Mode: no analytics cookies are set until the visitor accepts the banner, and the choice can be changed from "Cookie settings" in the footer. Only clicks are tracked (e.g. *Hype it*, *Escalate*) — the text you type goes to the API to generate the announcement and is never sent to Google or stored.
 
 ## Disclaimer
 
