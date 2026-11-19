@@ -12,7 +12,7 @@ Satirical landing page (fictional product, no real company/person).
 ## Deploy (Render, workspace AMG Boat Experiences)
 - Static site `gpb` → https://gpb.news (custom domain; `www` redirects to apex; also https://gpb-9ho2.onrender.com) — publish path `./`, no build. Note: it also serves `api/` and this file (no secrets in repo).
 - Web service `gpb-api` → https://gpb-api.onrender.com (Starter 0.5 CPU / 512 MB, $7/mo, Frankfurt; always on) — `node api/server.mjs`.
-- Domain `gpb.news` registered on Squarespace; DNS there: `A @ 216.24.57.1`, `CNAME www gpb-9ho2.onrender.com` (Squarespace Defaults preset removed; Email Security preset kept).
+- Domain `gpb.news` registered on Squarespace; DNS there: `A @ 216.24.57.1`, `CNAME www gpb-9ho2.onrender.com`, `TXT @ google-site-verification=…` (Search Console domain property, account alessandro.erta@amgboatxp.com — keep it or verification is lost) (Squarespace Defaults preset removed; Email Security preset kept).
 - Env on `gpb-api`: `KIMI_API_KEY` (set by Alessandro; `SET_ME` = disabled), `KIMI_MODEL` (default `kimi-k2.6`), `KIMI_BASE_URL` (default `https://api.moonshot.ai/v1`), `ALLOWED_ORIGIN` (`https://gpb.news,https://www.gpb.news,https://gpb-9ho2.onrender.com`), optional `RATE_PER_IP` (20/10min), `DAILY_CAP` (2000), `TRUSTED_PROXY_HOPS` (2).
 - Client IP for rate limiting = second-to-last X-Forwarded-For entry (verified on Render: "<client-supplied>, <real client>, <Cloudflare edge>"). POSTs without the allowed Origin get 403.
 
