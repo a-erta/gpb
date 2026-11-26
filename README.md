@@ -43,7 +43,7 @@ Without a key the page still works, using the built-in templates.
 | `KIMI_API_KEY` | — | Required for live generation |
 | `KIMI_MODEL` | `kimi-k2.6` | Model ID |
 | `KIMI_BASE_URL` | `https://api.moonshot.ai/v1` | Any OpenAI-compatible base URL |
-| `ALLOWED_ORIGIN` | — | Comma-separated origins allowed to call the API |
+| `ALLOWED_ORIGIN` | — | Comma-separated origins allowed to call the API (required: if unset, every POST gets 403) |
 | `RATE_PER_IP` | `20` | Requests per IP per 10 minutes |
 | `DAILY_CAP` | `2000` | Total model calls per day |
 | `TRUSTED_PROXY_HOPS` | `2` | Which `X-Forwarded-For` entry (from the end) is the real client; `2` fits Render behind Cloudflare |

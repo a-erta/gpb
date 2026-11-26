@@ -103,7 +103,8 @@ function send(res, code, obj, origin) {
 
 http.createServer(async (req, res) => {
   const origin = req.headers.origin;
-  const okOrigin = origin && (ORIGINS.length === 0 || ORIGINS.includes(origin)) ? origin : null;
+  // fail closed: with no ALLOWED_ORIGIN configured, no origin is allowed
+  const okOrigin = origin && ORIGINS.includes(origin) ? origin : null;
 
   if (req.method === "OPTIONS") {
     res.writeHead(204, okOrigin ? {
@@ -112,22 +113,36 @@ http.createServer(async (req, res) => {
     } : {});
     return res.end();
   }
-  if (req.url === "/healthz") return send(res, 200, { ok: true, kimi: Boolean(HAS_KEY), model: MODEL });
+  if (req.url === "/healthz") return send(res, 200, { ok: true, kimi: Boolean(HAS_KEY), model: MODEL }, okOrigin);
 
   const route = req.method === "POST" && { "/api/announce": announce, "/api/qa": qa }[req.url];
   if (!route) return send(res, 404, { error: "not found" }, okOrigin);
-  // browsers always send Origin on these cross-origin POSTs; reject anything else when an allowlist is set
-  if (ORIGINS.length ? !okOrigin : (origin && !okOrigin)) return send(res, 403, { error: "origin" });
+  // browsers always send Origin on these cross-origin POSTs; reject anything else
+  if (!okOrigin) return send(res, 403, { error: "origin" });
   if (!HAS_KEY) return send(res, 503, { error: "no key" }, okOrigin);
 
   const ip = clientIp(req);
   if (limited(ip)) return send(res, 429, { error: "rate limited" }, okOrigin);
 
-  let body = "";
-  req.on("data", c => { body += c; if (body.length > 8000) req.destroy(); });
+  let body = "", tooBig = false;
+  req.on("data", c => {
+    if (tooBig) return;
+    body += c;
+    if (body.length > 8000) {
+      tooBig = true;
+      res.on("finish", () => req.destroy());
+      send(res, 413, { error: "too large" }, okOrigin);
+    }
+  });
   req.on("end", async () => {
+    if (tooBig) return;
+    let input;
     try {
-      send(res, 200, await route(JSON.parse(body || "{}")), okOrigin);
+      input = JSON.parse(body || "{}");
+      if (!input || typeof input !== "object" || Array.isArray(input)) throw new Error("not an object");
+    } catch { return send(res, 400, { error: "bad json" }, okOrigin); }
+    try {
+      send(res, 200, await route(input), okOrigin);
     } catch (e) {
       console.error(e.message);
       send(res, 502, { error: "upstream" }, okOrigin);
